@@ -26,6 +26,7 @@ pip install -e . --no-deps
 ## Run
 
 ```bash
+python run_face_poc.py --version
 python run_face_poc.py run --input-dir /path/to/images --output-dir reports/run-001
 ```
 
@@ -47,6 +48,43 @@ python run_face_poc.py recluster \
   --input-run-dir reports/run-002 \
   --output-dir reports/recluster-050 \
   --agglomerative-distance-threshold 0.5
+```
+
+## Corrections
+
+Corrections are stored in a SQLite database and are applied automatically on future `run` and `recluster` commands.
+
+Show the current correction summary:
+
+```bash
+python run_face_poc.py corrections summary
+```
+
+Merge two clusters from an existing run:
+
+```bash
+python run_face_poc.py corrections merge-clusters \
+  --run-dir reports/run-002 \
+  --cluster-a 5 \
+  --cluster-b 12
+```
+
+Split a mistaken grouping by marking two faces as different people:
+
+```bash
+python run_face_poc.py corrections split-cluster \
+  --run-dir reports/run-002 \
+  --face-a img-0000-face-00 \
+  --face-b img-0007-face-01
+```
+
+Label a cluster:
+
+```bash
+python run_face_poc.py corrections label-cluster \
+  --run-dir reports/run-002 \
+  --cluster-id 5 \
+  --label "Alice"
 ```
 
 ## Outputs

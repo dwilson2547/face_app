@@ -8,6 +8,7 @@ from pathlib import Path
 class RunConfig:
     input_dir: Path
     output_dir: Path
+    corrections_db: Path
     device: str
     recursive: bool
     model_name: str
@@ -22,4 +23,5 @@ class RunConfig:
         data = asdict(self)
         data["input_dir"] = str(self.input_dir)
         data["output_dir"] = str(self.output_dir)
+        data["corrections_db"] = str(self.corrections_db)
         return data

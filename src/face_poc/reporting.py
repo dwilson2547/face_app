@@ -40,6 +40,11 @@ REPORT_TEMPLATE = Template(
     <div class="card"><h3>Problem files</h3><div>{{ run.summary.problem_images }}</div></div>
   </div>
 
+  {% if run.corrections %}
+  <h2>Corrections</h2>
+  <pre>{{ corrections_json }}</pre>
+  {% endif %}
+
   <h2>Run configuration</h2>
   <pre>{{ config_json }}</pre>
 
@@ -70,7 +75,9 @@ REPORT_TEMPLATE = Template(
           <img src="{{ face.thumbnail_relpath }}" alt="{{ face.face_id }}">
           <div class="meta">
             <div><strong>{{ face.face_id }}</strong></div>
+            <div>{{ face.face_key }}</div>
             <div>cluster={{ face.cluster_id }}</div>
+            {% if face.person_label %}<div>label={{ face.person_label }}</div>{% endif %}
             <div>confidence={{ "%.3f"|format(face.confidence) }}</div>
           </div>
         </div>
@@ -86,13 +93,16 @@ REPORT_TEMPLATE = Template(
   <div class="cluster">
     <h3>Cluster {{ cluster.cluster_id }} {% if cluster.cluster_id == -1 %}(noise/unassigned){% endif %}</h3>
     <p>{{ cluster.size }} faces across {{ cluster.image_count }} images</p>
+    {% if cluster.person_labels %}<p>labels={{ cluster.person_labels|join(', ') }}</p>{% endif %}
     <div class="faces">
       {% for face in cluster.faces %}
       <div class="face">
         <img src="{{ face.thumbnail_relpath }}" alt="{{ face.face_id }}">
         <div class="meta">
           <div><strong>{{ face.face_id }}</strong></div>
+          <div>{{ face.face_key }}</div>
           <div>{{ face.image_path }}</div>
+          {% if face.person_label %}<div>label={{ face.person_label }}</div>{% endif %}
           <div>confidence={{ "%.3f"|format(face.confidence) }}</div>
         </div>
       </div>
@@ -137,6 +147,7 @@ def write_html_report(
     html = REPORT_TEMPLATE.render(
         run=run_payload,
         config_json=json.dumps(run_payload["config"], indent=2),
+        corrections_json=json.dumps(run_payload.get("corrections", {}), indent=2),
         problem_images=problem_images,
         images=images_for_render,
         clusters=clusters_for_render,

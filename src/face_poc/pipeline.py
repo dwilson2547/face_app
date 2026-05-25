@@ -9,7 +9,9 @@ import numpy as np
 
 from face_poc.clustering import cluster_embeddings, summarize_clusters
 from face_poc.config import RunConfig
+from face_poc.corrections import apply_saved_corrections, ensure_face_keys, load_run_artifacts
 from face_poc.discovery import discover_images
+from face_poc.identity import make_face_key, normalize_box
 from face_poc.modeling import FacePipeline, load_image
 from face_poc.reporting import write_html_report, write_json
 
@@ -97,9 +99,10 @@ def run_pipeline(config: RunConfig) -> Path:
             face_records.append(
                 {
                     "face_id": face_id,
+                    "face_key": make_face_key(str(rel_path), normalize_box(detected_face.box)),
                     "image_id": image_id,
                     "image_path": str(rel_path),
-                    "box": [round(value, 2) for value in detected_face.box],
+                    "box": normalize_box(detected_face.box),
                     "confidence": round(detected_face.confidence, 6),
                     "thumbnail_path": str(Path("thumbnails") / thumbnail_name),
                     "thumbnail_relpath": str(Path("thumbnails") / thumbnail_name),
@@ -114,10 +117,16 @@ def run_pipeline(config: RunConfig) -> Path:
         dbscan_min_samples=config.dbscan_min_samples,
         agglomerative_distance_threshold=config.agglomerative_distance_threshold,
     )
+    labels, label_map, correction_warnings = apply_saved_corrections(
+        face_records=face_records,
+        labels=labels,
+        db_path=config.corrections_db,
+    )
 
     for record, label in zip(face_records, labels):
         record["cluster_id"] = int(label)
         record["thumbnail_relpath"] = str(record["thumbnail_path"])
+        record["person_label"] = label_map.get(str(record["face_key"]))
 
     clusters = summarize_clusters(face_records)
     cluster_face_index = Counter(int(record["cluster_id"]) for record in face_records)
@@ -133,6 +142,11 @@ def run_pipeline(config: RunConfig) -> Path:
             "total_clusters": len([cluster for cluster in clusters if cluster["cluster_id"] != -1]),
             "noise_faces": cluster_face_index.get(-1, 0),
             "problem_images": len([record for record in image_records if record["status"] != "ok"]),
+        },
+        "corrections": {
+            "db_path": str(config.corrections_db),
+            "applied": bool(label_map or correction_warnings),
+            "warnings": correction_warnings,
         },
         "input_dir": str(config.input_dir),
     }
@@ -155,6 +169,7 @@ def run_pipeline(config: RunConfig) -> Path:
 def recluster_run(
     input_run_dir: Path,
     output_dir: Path,
+    corrections_db: Path,
     clusterer: str,
     dbscan_eps: float,
     dbscan_min_samples: int,
@@ -164,10 +179,8 @@ def recluster_run(
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    run_payload = json.loads((input_run_dir / "run.json").read_text(encoding="utf-8"))
-    image_records = json.loads((input_run_dir / "images.json").read_text(encoding="utf-8"))
-    face_records = json.loads((input_run_dir / "faces.json").read_text(encoding="utf-8"))
-    embeddings = np.load(input_run_dir / "embeddings.npy")
+    run_payload, image_records, face_records, embeddings = load_run_artifacts(input_run_dir)
+    ensure_face_keys(face_records)
 
     labels = cluster_embeddings(
         embeddings=embeddings,
@@ -176,11 +189,17 @@ def recluster_run(
         dbscan_min_samples=dbscan_min_samples,
         agglomerative_distance_threshold=agglomerative_distance_threshold,
     )
+    labels, label_map, correction_warnings = apply_saved_corrections(
+        face_records=face_records,
+        labels=labels,
+        db_path=corrections_db,
+    )
 
     for record, label in zip(face_records, labels):
         record["cluster_id"] = int(label)
         original_thumbnail = input_run_dir / str(record["thumbnail_path"])
         record["thumbnail_relpath"] = os.path.relpath(original_thumbnail, output_dir)
+        record["person_label"] = label_map.get(str(record["face_key"]))
 
     clusters = summarize_clusters(face_records)
     cluster_face_index = Counter(int(record["cluster_id"]) for record in face_records)
@@ -190,6 +209,7 @@ def recluster_run(
     updated_config["dbscan_min_samples"] = dbscan_min_samples
     updated_config["agglomerative_distance_threshold"] = agglomerative_distance_threshold
     updated_config["output_dir"] = str(output_dir)
+    updated_config["corrections_db"] = str(corrections_db)
     run_payload["config"] = updated_config
     run_payload["summary"] = {
         "total_images": len(image_records),
@@ -197,6 +217,11 @@ def recluster_run(
         "total_clusters": len([cluster for cluster in clusters if cluster["cluster_id"] != -1]),
         "noise_faces": cluster_face_index.get(-1, 0),
         "problem_images": len([record for record in image_records if record["status"] != "ok"]),
+    }
+    run_payload["corrections"] = {
+        "db_path": str(corrections_db),
+        "applied": bool(label_map or correction_warnings),
+        "warnings": correction_warnings,
     }
     run_payload["source_run_dir"] = str(input_run_dir)
 

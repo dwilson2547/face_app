@@ -52,6 +52,7 @@ def summarize_clusters(face_records: list[dict[str, object]]) -> list[dict[str, 
     summaries: list[dict[str, object]] = []
     for cluster_id, members in sorted(grouped.items(), key=lambda item: (item[0] == -1, item[0])):
         image_paths = sorted({str(member["image_path"]) for member in members})
+        labels = sorted({str(member["person_label"]) for member in members if member.get("person_label")})
         summaries.append(
             {
                 "cluster_id": cluster_id,
@@ -59,8 +60,9 @@ def summarize_clusters(face_records: list[dict[str, object]]) -> list[dict[str, 
                 "image_count": len(image_paths),
                 "image_paths": image_paths,
                 "face_ids": [str(member["face_id"]) for member in members],
+                "face_keys": [str(member.get("face_key", member["face_id"])) for member in members],
                 "thumbnail_paths": [str(member["thumbnail_path"]) for member in members],
+                "person_labels": labels,
             }
         )
     return summaries
-
