@@ -50,6 +50,20 @@ python run_face_poc.py recluster \
   --agglomerative-distance-threshold 0.5
 ```
 
+Start the local review workstation UI:
+
+```bash
+python run_face_poc.py serve --host 127.0.0.1 --port 8000
+```
+
+Then open `http://127.0.0.1:8000/` to:
+
+- browse discovered runs under `reports/`
+- inspect cluster and image review pages
+- label clusters or individual faces
+- store merge/split corrections
+- trigger a recluster into a new run directory
+
 ## Corrections
 
 Corrections are stored in a SQLite database and are applied automatically on future `run` and `recluster` commands.
@@ -98,6 +112,8 @@ Each run writes:
 - `embeddings.npy` - normalized face embeddings
 - `report.html` - local review report
 - `thumbnails/` - face crops used in the report
+
+The review workstation reuses these files directly instead of copying them into a separate web database.
 
 ## Notes
 

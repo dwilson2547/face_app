@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Runs · face_app review{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="section-title">
+    <div>
+      <h1>Runs</h1>
+      <div class="muted">Browse the generated reports under <span class="mono">reports/</span> and jump into review pages.</div>
+    </div>
+  </div>
+</div>
+
+<div class="run-list">
+  {% for run in runs %}
+  <div class="panel">
+    <div class="section-title">
+      <div>
+        <h2><a href="{{ request.url_for('run_detail', run_name=run.name) }}">{{ run.name }}</a></h2>
+        <div class="muted">Updated {{ run.modified_at.strftime("%Y-%m-%d %H:%M:%S") }}</div>
+      </div>
+      <div class="inline">
+        {% if run.has_report %}
+        <a class="pill" href="{{ request.url_for('run_artifact', run_name=run.name, artifact_path='report.html') }}">Raw report</a>
+        {% endif %}
+        <a class="pill" href="{{ request.url_for('cluster_index', run_name=run.name) }}">Cluster review</a>
+      </div>
+    </div>
+    <div class="summary">
+      <div class="card"><strong>Images</strong><div>{{ run.summary.total_images }}</div></div>
+      <div class="card"><strong>Faces</strong><div>{{ run.summary.total_faces }}</div></div>
+      <div class="card"><strong>Clusters</strong><div>{{ run.summary.total_clusters }}</div></div>
+      <div class="card"><strong>Problem images</strong><div>{{ run.summary.problem_images }}</div></div>
+    </div>
+  </div>
+  {% else %}
+  <div class="panel">
+    <h2>No runs found</h2>
+    <p class="muted">Generate a run first with <span class="mono">python run_face_poc.py run ...</span>.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

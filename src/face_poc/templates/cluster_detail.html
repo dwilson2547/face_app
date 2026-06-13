@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Cluster {{ cluster.cluster_id }} · {{ run_name }}{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="section-title">
+    <div>
+      <h1>Cluster {{ cluster.cluster_id }}</h1>
+      <div class="muted">{{ cluster.size }} faces across {{ cluster.image_count }} images</div>
+    </div>
+    <div class="inline">
+      <a class="pill" href="{{ request.url_for('cluster_index', run_name=run_name) }}">Back to clusters</a>
+      <a class="pill" href="{{ request.url_for('run_detail', run_name=run_name) }}">Run detail</a>
+    </div>
+  </div>
+  {% if cluster.person_labels %}
+  <div class="success">Current labels: {{ cluster.person_labels | join(', ') }}</div>
+  {% endif %}
+</div>
+
+<div class="grid two">
+  <div class="panel">
+    <h2>Label cluster</h2>
+    <form method="post" action="{{ request.url_for('label_cluster', run_name=run_name, cluster_id=cluster.cluster_id) }}">
+      <label>Label
+        <input type="text" name="label" placeholder="Person name">
+      </label>
+      <label>Note
+        <textarea name="note" rows="3" placeholder="Optional review note"></textarea>
+      </label>
+      <button type="submit">Apply label to cluster</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Merge cluster</h2>
+    <form method="post" action="{{ request.url_for('merge_cluster', run_name=run_name, cluster_id=cluster.cluster_id) }}">
+      <label>Target cluster
+        <select name="target_cluster_id">
+          {% for target in merge_targets %}
+          <option value="{{ target.cluster_id }}">Cluster {{ target.cluster_id }} ({{ target.size }} faces)</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Note
+        <textarea name="note" rows="3" placeholder="Optional review note"></textarea>
+      </label>
+      <button type="submit">Store must-link merge</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Split cluster</h2>
+  <form method="post" action="{{ request.url_for('split_cluster', run_name=run_name, cluster_id=cluster.cluster_id) }}">
+    <div class="grid two">
+      <label>Face A
+        <select name="face_a">
+          {% for face in cluster.faces %}
+          <option value="{{ face.face_id }}">{{ face.face_id }} · {{ face.image_path }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Face B
+        <select name="face_b">
+          {% for face in cluster.faces %}
+          <option value="{{ face.face_id }}">{{ face.face_id }} · {{ face.image_path }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <label>Note
+      <textarea name="note" rows="3" placeholder="Why these faces should be different people"></textarea>
+    </label>
+    <button type="submit">Store cannot-link split</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>Faces</h2>
+  <div class="face-grid">
+    {% for face in cluster.faces %}
+    <div class="face">
+      <img src="{{ request.url_for('run_artifact', run_name=run_name, artifact_path=face.thumbnail_artifact_path) }}" alt="{{ face.face_id }}">
+      <div class="meta">
+        <div><strong>{{ face.face_id }}</strong></div>
+        <div><a href="{{ request.url_for('image_detail', run_name=run_name, image_id=face.image_id) }}">{{ face.image_path }}</a></div>
+        <div class="mono">{{ face.face_key }}</div>
+        {% if face.person_label %}<div>label={{ face.person_label }}</div>{% endif %}
+        <div>confidence={{ "%.3f"|format(face.confidence) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

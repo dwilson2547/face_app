@@ -33,17 +33,22 @@ def ensure_face_keys(face_records: list[dict[str, object]]) -> None:
             record["face_key"] = make_face_key(str(record["image_path"]), list(record["box"]))
 
 
-def load_run_artifacts(run_dir: Path) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]], np.ndarray]:
+def load_run_json_artifacts(run_dir: Path) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]]]:
     run_payload = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
     image_records = json.loads((run_dir / "images.json").read_text(encoding="utf-8"))
     face_records = json.loads((run_dir / "faces.json").read_text(encoding="utf-8"))
-    embeddings = np.load(run_dir / "embeddings.npy")
     ensure_face_keys(face_records)
+    return run_payload, image_records, face_records
+
+
+def load_run_artifacts(run_dir: Path) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]], np.ndarray]:
+    run_payload, image_records, face_records = load_run_json_artifacts(run_dir)
+    embeddings = np.load(run_dir / "embeddings.npy")
     return run_payload, image_records, face_records, embeddings
 
 
 def resolve_face_key(run_dir: Path, face_identifier: str) -> str:
-    _, _, face_records, _ = load_run_artifacts(run_dir)
+    _, _, face_records = load_run_json_artifacts(run_dir)
     for record in face_records:
         if record["face_id"] == face_identifier or record["face_key"] == face_identifier:
             return str(record["face_key"])
@@ -51,7 +56,7 @@ def resolve_face_key(run_dir: Path, face_identifier: str) -> str:
 
 
 def resolve_cluster_faces(run_dir: Path, cluster_id: int) -> list[dict[str, object]]:
-    _, _, face_records, _ = load_run_artifacts(run_dir)
+    _, _, face_records = load_run_json_artifacts(run_dir)
     return [record for record in face_records if int(record["cluster_id"]) == cluster_id]
 
 

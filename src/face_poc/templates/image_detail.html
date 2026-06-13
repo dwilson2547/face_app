@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ image.path }} · {{ run_name }}{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="section-title">
+    <div>
+      <h1>{{ image.path }}</h1>
+      <div class="muted">status={{ image.status }} · faces={{ image.face_count }}</div>
+    </div>
+    <div class="inline">
+      <a class="pill" href="{{ request.url_for('run_detail', run_name=run_name) }}">Run detail</a>
+      <a class="pill" href="{{ request.url_for('run_input_image', run_name=run_name, image_path=image.path) }}">Open original image</a>
+    </div>
+  </div>
+  <img class="image-preview" src="{{ request.url_for('run_input_image', run_name=run_name, image_path=image.path) }}" alt="{{ image.path }}">
+</div>
+
+<div class="panel">
+  <h2>Detected faces</h2>
+  <div class="face-grid">
+    {% for face in image.faces %}
+    <div class="face">
+      <img src="{{ request.url_for('run_artifact', run_name=run_name, artifact_path=face.thumbnail_artifact_path) }}" alt="{{ face.face_id }}">
+      <div class="meta">
+        <div><strong>{{ face.face_id }}</strong></div>
+        <div>cluster=<a href="{{ request.url_for('cluster_detail', run_name=run_name, cluster_id=face.cluster_id) }}">{{ face.cluster_id }}</a></div>
+        <div class="mono">{{ face.face_key }}</div>
+        {% if face.person_label %}<div>label={{ face.person_label }}</div>{% endif %}
+        <div>confidence={{ "%.3f"|format(face.confidence) }}</div>
+        <form method="post" action="{{ request.url_for('label_face', run_name=run_name, face_id=face.face_id) }}">
+          <input type="hidden" name="next_url" value="{{ request.url_for('image_detail', run_name=run_name, image_id=image.image_id) }}">
+          <label>Face label
+            <input type="text" name="label" placeholder="Person name">
+          </label>
+          <label>Note
+            <input type="text" name="note" placeholder="Optional note">
+          </label>
+          <button type="submit" class="secondary">Label face</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}face_app review workstation{% endblock %}</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --line: #334155;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #93c5fd;
+      --accent-2: #38bdf8;
+      --danger: #fca5a5;
+      --success: #86efac;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .page { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .nav { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .nav .brand { font-size: 1.2rem; font-weight: bold; margin-right: 12px; }
+    .nav a.active { color: white; }
+    .muted { color: var(--muted); }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0 24px; }
+    .card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+    .panel + .panel { margin-top: 16px; }
+    .section-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+    .grid { display: grid; gap: 16px; }
+    .grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .grid.three { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .stack { display: grid; gap: 12px; }
+    .run-list, .cluster-list, .image-list { display: grid; gap: 16px; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #0b1220; border: 1px solid var(--line); font-size: 0.85rem; }
+    .face-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .face { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .face img { display: block; width: 100%; background: black; aspect-ratio: 1 / 1; object-fit: cover; }
+    .face .meta { padding: 10px; font-size: 0.85rem; display: grid; gap: 4px; }
+    .image-preview { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: black; }
+    form { display: grid; gap: 8px; }
+    label { display: grid; gap: 4px; font-size: 0.92rem; }
+    input, select, button, textarea { font: inherit; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--text);
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #2563eb;
+      background: #1d4ed8;
+      color: white;
+      cursor: pointer;
+    }
+    button.secondary { background: transparent; border-color: var(--line); color: var(--text); }
+    .inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .danger { color: var(--danger); }
+    .success { color: var(--success); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre { white-space: pre-wrap; background: #020617; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="nav">
+      <div class="brand"><a href="{{ request.url_for('runs_index') }}">face_app review</a></div>
+      <a href="{{ request.url_for('runs_index') }}" class="{% if active_nav == 'runs' %}active{% endif %}">Runs</a>
+      {% if run_name %}
+      <a href="{{ request.url_for('run_detail', run_name=run_name) }}" class="{% if active_nav == 'runs' %}active{% endif %}">Run detail</a>
+      <a href="{{ request.url_for('cluster_index', run_name=run_name) }}" class="{% if active_nav == 'clusters' %}active{% endif %}">Clusters</a>
+      {% endif %}
+    </div>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

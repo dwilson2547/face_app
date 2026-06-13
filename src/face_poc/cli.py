@@ -124,6 +124,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Cosine distance threshold when --clusterer=agglomerative",
     )
 
+    serve_parser = subparsers.add_parser("serve", help="Start the local review workstation UI")
+    serve_parser.add_argument("--host", default="127.0.0.1", help="Bind address for the local web server")
+    serve_parser.add_argument("--port", type=int, default=8000, help="Port for the local web server")
+    serve_parser.add_argument("--reload", action="store_true", help="Enable uvicorn reload mode")
+
     corrections_parser = subparsers.add_parser("corrections", help="Manage saved clustering corrections")
     corrections_sub = corrections_parser.add_subparsers(dest="corrections_command", required=True)
 
@@ -206,6 +211,16 @@ def main() -> None:
             agglomerative_distance_threshold=args.agglomerative_distance_threshold,
         )
         print(f"Report written to {report_path}")
+    elif args.command == "serve":
+        import uvicorn
+
+        uvicorn.run(
+            "face_poc.webapp:create_app",
+            host=args.host,
+            port=args.port,
+            reload=args.reload,
+            factory=True,
+        )
     elif args.command == "corrections":
         if args.corrections_command == "summary":
             print(corrections_summary(args.db_path.resolve()))

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{{ run_name }} · face_app review{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="section-title">
+    <div>
+      <h1>{{ run_name }}</h1>
+      <div class="muted">{{ run_payload.input_dir }}</div>
+    </div>
+    <div class="inline">
+      <a class="pill" href="{{ request.url_for('run_artifact', run_name=run_name, artifact_path='report.html') }}">Open raw report</a>
+      <a class="pill" href="{{ request.url_for('cluster_index', run_name=run_name) }}">Open cluster review</a>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="card"><strong>Images</strong><div>{{ run_payload.summary.total_images }}</div></div>
+    <div class="card"><strong>Faces</strong><div>{{ run_payload.summary.total_faces }}</div></div>
+    <div class="card"><strong>Clusters</strong><div>{{ run_payload.summary.total_clusters }}</div></div>
+    <div class="card"><strong>Problem images</strong><div>{{ run_payload.summary.problem_images }}</div></div>
+  </div>
+</div>
+
+<div class="grid two">
+  <div class="panel">
+    <div class="section-title">
+      <div>
+        <h2>Corrections DB</h2>
+        <div class="muted mono">{{ corrections_db }}</div>
+      </div>
+    </div>
+    <table>
+      <tr><th>Must-link</th><td>{{ corrections_summary.must_link }}</td></tr>
+      <tr><th>Cannot-link</th><td>{{ corrections_summary.cannot_link }}</td></tr>
+      <tr><th>Labels</th><td>{{ corrections_summary.labels }}</td></tr>
+      <tr><th>Actions</th><td>{{ corrections_summary.actions }}</td></tr>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">
+      <div>
+        <h2>Recluster</h2>
+        <div class="muted">Create a new run directory from the current embeddings and corrections.</div>
+      </div>
+    </div>
+    <form method="post" action="{{ request.url_for('recluster_from_ui', run_name=run_name) }}">
+      <label>Clusterer
+        <select name="clusterer">
+          <option value="agglomerative" {% if run_payload.config.clusterer == 'agglomerative' %}selected{% endif %}>agglomerative</option>
+          <option value="dbscan" {% if run_payload.config.clusterer == 'dbscan' %}selected{% endif %}>dbscan</option>
+        </select>
+      </label>
+      <label>Agglomerative distance threshold
+        <input type="number" step="0.01" name="agglomerative_distance_threshold" value="{{ run_payload.config.agglomerative_distance_threshold }}">
+      </label>
+      <label>DBSCAN eps
+        <input type="number" step="0.01" name="dbscan_eps" value="{{ run_payload.config.dbscan_eps }}">
+      </label>
+      <label>DBSCAN min samples
+        <input type="number" step="1" name="dbscan_min_samples" value="{{ run_payload.config.dbscan_min_samples }}">
+      </label>
+      <label>Output directory name (optional)
+        <input type="text" name="output_name" placeholder="auto-generated under reports/">
+      </label>
+      <button type="submit">Create reclustered run</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid two">
+  <div class="panel">
+    <div class="section-title">
+      <div>
+        <h2>Top clusters</h2>
+        <div class="muted">Largest groups first.</div>
+      </div>
+      <a href="{{ request.url_for('cluster_index', run_name=run_name) }}">View all</a>
+    </div>
+    <div class="cluster-list">
+      {% for cluster in top_clusters %}
+      <div class="card">
+        <div class="section-title">
+          <div>
+            <strong><a href="{{ request.url_for('cluster_detail', run_name=run_name, cluster_id=cluster.cluster_id) }}">Cluster {{ cluster.cluster_id }}</a></strong>
+            <div class="muted">{{ cluster.size }} faces across {{ cluster.image_count }} images</div>
+          </div>
+        </div>
+        <div class="face-grid">
+          {% for face in cluster.preview_faces %}
+          <div class="face">
+            <img src="{{ request.url_for('run_artifact', run_name=run_name, artifact_path=face.thumbnail_artifact_path) }}" alt="{{ face.face_id }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">
+      <div>
+        <h2>Images</h2>
+        <div class="muted">Quick links into image-level review.</div>
+      </div>
+    </div>
+    <div class="image-list">
+      {% for image in recent_images %}
+      <div class="card">
+        <div class="section-title">
+          <div>
+            <strong><a href="{{ request.url_for('image_detail', run_name=run_name, image_id=image.image_id) }}">{{ image.path }}</a></strong>
+            <div class="muted">status={{ image.status }} · faces={{ image.face_count }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if problem_images %}
+<div class="panel">
+  <h2>Problem images</h2>
+  <ul>
+    {% for image in problem_images %}
+    <li><strong>{{ image.path }}</strong> — {{ image.status }}{% if image.error %}: {{ image.error }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>Run configuration</h2>
+  <pre>{{ run_payload.config | tojson(indent=2) }}</pre>
+</div>
+{% endblock %}

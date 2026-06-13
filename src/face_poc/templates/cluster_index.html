@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ run_name }} clusters · face_app review{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="section-title">
+    <div>
+      <h1>Clusters for {{ run_name }}</h1>
+      <div class="muted">{{ clusters | length }} rendered cluster groups</div>
+    </div>
+    <a class="pill" href="{{ request.url_for('run_detail', run_name=run_name) }}">Back to run</a>
+  </div>
+</div>
+
+<div class="cluster-list">
+  {% for cluster in clusters %}
+  <div class="panel">
+    <div class="section-title">
+      <div>
+        <h2><a href="{{ request.url_for('cluster_detail', run_name=run_name, cluster_id=cluster.cluster_id) }}">Cluster {{ cluster.cluster_id }}</a></h2>
+        <div class="muted">{{ cluster.size }} faces across {{ cluster.image_count }} images</div>
+      </div>
+      {% if cluster.person_labels %}
+      <div class="pill">{{ cluster.person_labels | join(', ') }}</div>
+      {% endif %}
+    </div>
+    <div class="face-grid">
+      {% for face in cluster.preview_faces %}
+      <div class="face">
+        <img src="{{ request.url_for('run_artifact', run_name=run_name, artifact_path=face.thumbnail_artifact_path) }}" alt="{{ face.face_id }}">
+        <div class="meta">
+          <div><strong>{{ face.face_id }}</strong></div>
+          <div><a href="{{ request.url_for('image_detail', run_name=run_name, image_id=face.image_id) }}">{{ face.image_path }}</a></div>
+          <div>confidence={{ "%.3f"|format(face.confidence) }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

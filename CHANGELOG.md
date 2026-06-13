@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Local review workstation UI built with FastAPI + Jinja2 for browsing runs, reviewing clusters, inspecting images, and applying corrections.
+- New `python run_face_poc.py serve ...` entrypoint for launching the review UI.
+- In-browser recluster workflow that creates a new run directory from an existing run and the saved corrections DB.
+
 ## [0.2.0] - 2026-05-24
 
 ### Added
